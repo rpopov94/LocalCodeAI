@@ -13,3 +13,4 @@ wheels/
 vectorstore
 
 *.sqlite
+models
