@@ -1,55 +1,43 @@
 """Local llm."""
-# core/llm/local_llm.py
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
-import os
-from typing import Optional
 
 
 class LocalLLM:
-    def __init__(self, model_path: Optional[str] = None):
-        """
-        Инициализация локальной LLM.
-
-        Args:
-            model_path: Путь к локальной модели или идентификатор модели из HuggingFace Hub
-                       Если None, будет использована модель по умолчанию
-        """
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        if model_path is None:
-            model_path = "microsoft/phi-2"
-            self.local = False
-        else:
-            self.local = True
+    def __init__(self, model_path: str = "microsoft/phi-2"):
+        self.device = "cpu"
 
         try:
             self.tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
-                local_files_only=self.local
+                trust_remote_code=True
             )
 
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_path,
-                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
-                device_map="auto",
-                local_files_only=self.local
-            ).to(self.device)
+                torch_dtype=torch.float32,
+                device_map="cpu",
+                trust_remote_code=True,
+                low_cpu_mem_usage=True,
+            ).to('cpu')
 
         except Exception as e:
-            raise RuntimeError(f"Can't loading model: {e}")
+            raise RuntimeError(f"Can't load model: {str(e)}")
 
-    def generate(self, prompt: str, max_length: int = 500) -> str:
-        """Generate by prompt."""
+    def generate(self, prompt: str, max_length: int = 200) -> str:
         try:
-            inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+            inputs = self.tokenizer(prompt, return_tensors="pt").to('cpu')
+
             outputs = self.model.generate(
-                **inputs,
+                inputs.input_ids,
                 max_length=max_length,
                 do_sample=True,
                 temperature=0.7,
-                top_p=0.9
+                top_p=0.9,
+                pad_token_id=self.tokenizer.eos_token_id
             )
+
             return self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+
         except Exception as e:
-            raise RuntimeError(f"Generation error: {e}")
+            raise RuntimeError(f"Generation error: {str(e)}")
