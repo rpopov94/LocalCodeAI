@@ -1,5 +1,7 @@
 """Main api."""
-from fastapi import FastAPI
+from typing import Optional
+
+from fastapi import FastAPI, Query, HTTPException
 from core.rag.rag_core import RAGSystem
 from core.llm.local_llm import LocalLLM
 
@@ -9,16 +11,36 @@ llm = LocalLLM()
 
 app = FastAPI()
 
-@app.post("/build_knowledge_base")
+@app.get("/build_knowledge_base")
 async def build_kb():
     rag.build_knowledge_base()
     return {"status": "success"}
 
-@app.post("/ask")
-async def ask_question(question: str):
-    context = rag.query(question)
-    prompt = f"Context: {context}\n\nQuestion: {question}\nAnswer:"
-    return {"answer": llm.generate(prompt)}
+
+@app.get("/ask")
+async def ask_question(
+        question: str = Query(..., min_length=3, description="Ваш вопрос для ИИ"),
+        top_k: Optional[int] = Query(3, gt=0, le=10, description="Количество возвращаемых результатов")
+):
+    try:
+        context = rag.query(question, top_k=top_k)
+
+        prompt = f"""Контекст: {context}
+
+        Вопрос: {question}
+
+        Ответ:"""
+
+        answer = llm.generate(prompt)
+
+        return {
+            "question": question,
+            "context": context,
+            "answer": answer
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

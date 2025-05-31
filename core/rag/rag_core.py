@@ -1,8 +1,6 @@
 """Core of rag."""
 from typing import List, Dict
 
-from langchain_community.docstore import document
-
 from core.embeddings.local_ebeddings import LocalEmbedder
 from core.parser.python import PythonCodeParser
 from core.vector_db.chroma_manager import ChromaDBManager
@@ -23,7 +21,7 @@ class RAGSystem:
         ids = []
 
         for i, entity in enumerate(entities):
-            content = f"{entity['type']} {entity['name']}:\n{document['docstring']}\nCode:\n{entity['code']}"
+            content = f"{entity['type']} {entity['name']}:\n{entity['docstring']}\nCode:\n{entity['code']}"
             documents.append(content)
             metadatas.append({
                 'type': entity['type'],

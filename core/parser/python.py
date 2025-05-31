@@ -3,6 +3,8 @@ import ast
 from typing import List, Dict
 from pathlib import Path
 
+from loguru import logger
+
 
 class PythonCodeParser:
     """Ast tree pyparser."""
@@ -11,9 +13,19 @@ class PythonCodeParser:
         self.repo_path = Path(repo_path).resolve()
 
     def parse_file(self, file_path: Path) -> List[Dict]:
-        """Извлекает структуры из Python-файла"""
-        with open(file_path, 'r', encoding='utf-8') as f:
-            tree = ast.parse(f.read())
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                code = f.read()
+                if not code.strip():  # Пропускаем пустые файлы
+                    return []
+
+                tree = ast.parse(code)
+                if not isinstance(tree, ast.Module):  # Проверяем тип AST
+                    return []
+
+        except (SyntaxError, UnicodeDecodeError, AttributeError) as e:
+            print(f"Skipping {file_path}: {str(e)}")
+            return []
 
         entities = []
         for node in ast.walk(tree):
