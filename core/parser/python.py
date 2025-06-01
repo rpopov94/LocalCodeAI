@@ -3,8 +3,6 @@ import ast
 from typing import List, Dict
 from pathlib import Path
 
-from loguru import logger
-
 
 class PythonCodeParser:
     """Ast tree pyparser."""
@@ -13,14 +11,15 @@ class PythonCodeParser:
         self.repo_path = Path(repo_path).resolve()
 
     def parse_file(self, file_path: Path) -> List[Dict]:
+        """Parse one file."""
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 code = f.read()
-                if not code.strip():  # Пропускаем пустые файлы
+                if not code.strip():
                     return []
 
                 tree = ast.parse(code)
-                if not isinstance(tree, ast.Module):  # Проверяем тип AST
+                if not isinstance(tree, ast.Module):
                     return []
 
         except (SyntaxError, UnicodeDecodeError, AttributeError) as e:
@@ -41,7 +40,7 @@ class PythonCodeParser:
         return entities
 
     def parse_project(self) -> List[Dict]:
-        """Рекурсивный парсинг всего проекта"""
+        """Recursive parsing of the entire project."""
         all_entities = []
         for py_file in self.repo_path.rglob('*.py'):
             all_entities.extend(self.parse_file(py_file))

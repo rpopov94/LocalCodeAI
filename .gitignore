@@ -14,3 +14,5 @@ vectorstore
 
 *.sqlite
 models
+.env
+chroma_db

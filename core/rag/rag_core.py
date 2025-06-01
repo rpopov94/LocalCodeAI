@@ -7,32 +7,34 @@ from core.vector_db.chroma_manager import ChromaDBManager
 
 
 class RAGSystem:
+    """Simple rag system."""
+
     def __init__(self, repo_path: str):
         self.parser = PythonCodeParser(repo_path)
         self.embedder = LocalEmbedder()
         self.vector_db = ChromaDBManager()
 
     def build_knowledge_base(self):
-        """Полный цикл создания базы знаний"""
+        """The full cycle of knowledge base creation."""
         entities = self.parser.parse_project()
 
         documents = []
-        metadatas = []
+        metalist = []
         ids = []
 
         for i, entity in enumerate(entities):
             content = f"{entity['type']} {entity['name']}:\n{entity['docstring']}\nCode:\n{entity['code']}"
             documents.append(content)
-            metadatas.append({
+            metalist.append({
                 'type': entity['type'],
                 'file': entity['file']
             })
             ids.append(str(i))
 
         embeddings = self.embedder.embed_batch(documents)
-        self.vector_db.upsert(ids, embeddings, metadatas, documents)
+        self.vector_db.upsert(ids, embeddings, metalist, documents)
 
     def query(self, question: str, top_k: int = 3) -> List[Dict]:
-        """Поиск по базе знаний"""
+        """Knowledge base search."""
         query_embedding = self.embedder.embed(question)
         return self.vector_db.search(query_embedding, top_k)

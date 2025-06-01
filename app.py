@@ -1,12 +1,15 @@
 """Main api."""
 from typing import Optional
 
+import uvicorn
 from fastapi import FastAPI, Query, HTTPException
+
+from config import DOC_SOURSES
 from core.rag.rag_core import RAGSystem
 from core.llm.local_llm import LocalLLM
 
 
-rag = RAGSystem(r"C:\WorkSpace\websploit")
+rag = RAGSystem(DOC_SOURSES)
 llm = LocalLLM()
 
 app = FastAPI()
@@ -19,17 +22,17 @@ async def build_kb():
 
 @app.get("/ask")
 async def ask_question(
-        question: str = Query(..., min_length=3, description="Ваш вопрос для ИИ"),
-        top_k: Optional[int] = Query(3, gt=0, le=10, description="Количество возвращаемых результатов")
+    question: str = Query(..., min_length=3, description="Your question"),
+    top_k: Optional[int] = Query(3, gt=0, le=10, description="Number of results returned")
 ):
     try:
         context = rag.query(question, top_k=top_k)
 
-        prompt = f"""Контекст: {context}
+        prompt = f"""Context: {context}
 
-        Вопрос: {question}
+        Question: {question}
 
-        Ответ:"""
+        Answer:"""
 
         answer = llm.generate(prompt)
 
@@ -44,5 +47,4 @@ async def ask_question(
 
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)

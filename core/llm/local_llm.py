@@ -24,13 +24,13 @@ class LocalLLM:
         except Exception as e:
             raise RuntimeError(f"Can't load model: {str(e)}")
 
-    def generate(self, prompt: str, max_length: int = 200) -> str:
+    def generate(self, prompt: str, max_new_tokens: int = 200) -> str:
         try:
             inputs = self.tokenizer(prompt, return_tensors="pt").to('cpu')
 
             outputs = self.model.generate(
                 inputs.input_ids,
-                max_length=max_length,
+                max_new_tokens=max_new_tokens,
                 do_sample=True,
                 temperature=0.7,
                 top_p=0.9,
