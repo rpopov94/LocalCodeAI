@@ -2,7 +2,7 @@
 from typing import List, Dict
 
 from core.embeddings.local_ebeddings import LocalEmbedder
-from core.parser.python import PythonCodeParser
+from core.parser.docs import DocLoader
 from core.vector_db.chroma_manager import ChromaDBManager
 
 
@@ -10,7 +10,7 @@ class RAGSystem:
     """Simple rag system."""
 
     def __init__(self, repo_path: str):
-        self.parser = PythonCodeParser(repo_path)
+        self.parser = DocLoader(repo_path)
         self.embedder = LocalEmbedder()
         self.vector_db = ChromaDBManager()
 
@@ -23,11 +23,11 @@ class RAGSystem:
         ids = []
 
         for i, entity in enumerate(entities):
-            content = f"{entity['type']} {entity['name']}:\n{entity['docstring']}\nCode:\n{entity['code']}"
+            content = f"{entity.type} \nCode:\n{entity.page_content}"
             documents.append(content)
             metalist.append({
-                'type': entity['type'],
-                'file': entity['file']
+                'type': entity.type,
+                'file': entity.metadata.get('source', None),
             })
             ids.append(str(i))
 

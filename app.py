@@ -4,13 +4,13 @@ from typing import Optional
 import uvicorn
 from fastapi import FastAPI, Query, HTTPException
 
-from config import DOC_SOURSES
+from config import DOC_SOURSES, MODEL_PATH
 from core.rag.rag_core import RAGSystem
 from core.llm.local_llm import LocalLLM
 
 
 rag = RAGSystem(DOC_SOURSES)
-llm = LocalLLM()
+llm = LocalLLM(MODEL_PATH)
 
 app = FastAPI()
 
