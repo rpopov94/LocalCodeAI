@@ -1,50 +1,22 @@
-"""Main api."""
-from typing import Optional
+"""Main API with chunking support."""
+import gradio as gr
 
-import uvicorn
-from fastapi import FastAPI, Query, HTTPException
-
-from config import DOC_SOURSES, MODEL_PATH
-from core.rag.rag_core import RAGSystem
-from core.llm.local_llm import LocalLLM
+from bot import RAGBot
 
 
-rag = RAGSystem(DOC_SOURSES)
-llm = LocalLLM(MODEL_PATH)
+bot = RAGBot()
 
-app = FastAPI()
+def chat_interface(query: str, history: list[list[str]]):
+    bot_response = bot.generate_response(query)
+    history.append((query, bot_response))
+    return history, ""
 
-@app.get("/build_knowledge_base")
-async def build_kb():
-    rag.build_knowledge_base()
-    return {"status": "success"}
+with gr.Blocks() as app:
+    chatbot = gr.Chatbot(height=500, type="messages")
+    msg = gr.Textbox(label="Ваш вопрос")
+    clear = gr.Button("Очистить историю")
 
+    msg.submit(chat_interface, [msg, chatbot], [chatbot, msg])
+    clear.click(lambda: None, None, chatbot, queue=False)
 
-@app.get("/ask")
-async def ask_question(
-    question: str = Query(..., min_length=3, description="Your question"),
-    top_k: Optional[int] = Query(3, gt=0, le=10, description="Number of results returned")
-):
-    try:
-        context = rag.query(question, top_k=top_k)
-
-        prompt = f"""Context: {context}
-
-        Question: {question}
-
-        Answer:"""
-
-        answer = llm.generate(prompt)
-
-        return {
-            "question": question,
-            "context": context,
-            "answer": answer
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+app.launch(server_port=7860)

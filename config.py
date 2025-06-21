@@ -5,5 +5,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DOC_SOURSES = os.getenv('DOC_SOURCES', None)
-MODEL_PATH = os.getenv('MODEL_PATH')
+class Config:
+    DATA_DIR = os.getenv("DATA_DIR", "./data")
+    VECTOR_DB_PATH = os.path.join(DATA_DIR, "vectorstore")
+    EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    LLM_NAME = os.getenv('LLM_NAME')
+    HUGGINGFACE = os.getenv('HUGGINGFACEHUB_API_TOKEN')
+
+config = Config()
