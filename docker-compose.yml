@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui-data:/app/backend/data
+    environment:
+      - WEBUI_AUTH=False
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - CHROMA_URL=http://chroma:8000
+    depends_on:
+      ollama:
+        condition: service_healthy
+      chroma:
+        condition: service_started
+    restart: always
+    networks:
+      - ai-net
+
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_MODEL=tinyllama:1.1b-chat
+    deploy:
+      resources:
+        limits:
+          memory: 10G
+    restart: always
+    networks:
+      - ai-net
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma-data:/data/chromadb
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - ai-net
+
+volumes:
+  chroma-data:
+    name: chroma-data
+  ollama-data:
+    name: ollama-data
+  open-webui-data:
+    name: open-webui-data
+
+networks:
+  ai-net:
+    driver: bridge
